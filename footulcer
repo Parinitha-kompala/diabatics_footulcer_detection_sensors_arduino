@@ -1,0 +1,220 @@
+#include <OneWire.h>
+#include <LiquidCrystal.h>
+
+// OneWire DS18S20, DS18B20, DS1822 Temperature Example
+//
+// http://www.pjrc.com/teensy/td_libs_OneWire.html
+//
+// The DallasTemperature library can do all this work for you!
+// http://milesburton.com/Dallas_Temperature_Control_Library
+
+OneWire  ds(A5);  // on pin 10 (a 4.7K resistor is necessary)
+
+  LiquidCrystal lcd(13, 12, 11, 10, 9, 8);
+
+const int analogInPin1 = A0;  // Analog input pin that the potentiometer is attached to
+const int analogInPin2 = A1;  // Analog input pin that the potentiometer is attached to
+int sensorValue1 = 0;        // value read from the pot
+int sensorValue2 = 0;        // value read from the pot
+int sensorValue3 = 0;        // value read from the pot
+int sensorValue4 = 0;        // value read from the pot
+int sensorValue = 0;        // value read from the pot
+int sensorValue5 = 0;        // value read from the pot
+int sensorValue6 = 0;        // value read from the pot
+int sensorValue7 = 0;        // value read from the pot
+int sensorValue8 = 0;        // value read from the pot
+int sensorValue9 = 0;        // value read from the pot
+
+int count1,count2,count,countc;
+int f1,f2,time1,time2,fl,time1c,time2c;
+
+void setup(void) {
+   lcd.begin(16, 2);
+  Serial.begin(9600);
+     pinMode(A5, INPUT_PULLUP); 
+     pinMode(3,OUTPUT);
+     digitalWrite(3,0);
+}
+int oc;
+
+void loop(void) {
+  byte i;
+  byte present = 0;
+  byte type_s;
+  byte data[12];
+  byte addr[8];
+  float celsius, fahrenheit;
+  
+  if ( !ds.search(addr)) {
+   // Serial.println("No more addresses.");
+   // Serial.println();
+    ds.reset_search();
+    delay(250);
+    return;
+  }
+  
+  if (OneWire::crc8(addr, 7) != addr[7]) {
+//     Serial.println("CRC is not valid!");
+      return;
+  }
+//  Serial.println();
+ 
+  ds.reset();
+  ds.select(addr);
+  ds.write(0x44, 1);        // start conversion, with parasite power on at the end
+  
+  delay(1000);     // maybe 750ms is enough, maybe not
+  // we might do a ds.depower() here, but the reset will take care of it.
+  
+  present = ds.reset();
+  ds.select(addr);    
+  ds.write(0xBE);         // Read Scratchpad
+
+//  Serial.print("  Data = ");
+ // Serial.print(present, HEX);
+ // Serial.print(" ");
+  for ( i = 0; i < 9; i++) {           // we need 9 bytes
+    data[i] = ds.read();
+ //   Serial.print(data[i], HEX);
+ //   Serial.print(" ");
+  }
+//  Serial.print(" CRC=");
+//  Serial.print(OneWire::crc8(data, 8), HEX);
+//  Serial.println();
+
+  // Convert the data to actual temperature
+  // because the result is a 16 bit signed integer, it should
+  // be stored to an "int16_t" type, which is always 16 bits
+  // even when compiled on a 32 bit processor.
+  int16_t raw = (data[1] << 8) | data[0];
+  if (type_s) {
+    raw = raw << 3; // 9 bit resolution default
+    if (data[7] == 0x10) {
+      // "count remain" gives full 12 bit resolution
+      raw = (raw & 0xFFF0) + 12 - data[6];
+    }
+  } else {
+    byte cfg = (data[4] & 0x60);
+    // at lower res, the low bits are undefined, so let's zero them
+    if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
+    else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
+    else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
+    //// default is 12 bit resolution, 750 ms conversion time
+  }
+  
+  
+  celsius = (float)raw / 16.0;
+  fahrenheit = celsius * 1.8 + 32.0;
+  
+   
+  lcd.setCursor(0, 0);
+  lcd.print('T');
+  lcd.print(celsius);
+lcd.print(' ');
+
+
+  sensorValue1 = analogRead(A0)/2;  
+  sensorValue1 = analogRead(A0)/2;  
+  sensorValue2 = analogRead(A1)/2;  
+  sensorValue2 = analogRead(A1)/2;  
+  sensorValue3 = analogRead(A2)/2;  
+  sensorValue3 = analogRead(A2)/2;  
+
+  lcd.setCursor(0, 1);  
+  lcd.print('F');
+  lcd.write((sensorValue1/100)+0x30);      
+  lcd.write(((sensorValue1%100)/10)+0x30);      
+  lcd.write((sensorValue1%10)+0x30);       
+
+  lcd.setCursor(5, 1);  
+  lcd.print('P');
+  lcd.write((sensorValue2/100)+0x30);      
+  lcd.write(((sensorValue2%100)/10)+0x30);      
+  lcd.write((sensorValue2%10)+0x30);       
+
+  lcd.setCursor(10, 1);  
+  lcd.print('H');
+  lcd.write((sensorValue3/100)+0x30);      
+  lcd.write(((sensorValue3%100)/10)+0x30);      
+  lcd.write((sensorValue3%10)+0x30);      
+
+ lcd.setCursor(8, 0);
+  lcd.print("M:");
+  sensorValue4 = analogRead(A3)/2;  
+  sensorValue4= analogRead(A3)/2;  
+  lcd.write((sensorValue4/100)+0x30);      
+  lcd.write(((sensorValue4%100)/10)+0x30);      
+  lcd.write((sensorValue4%10)+0x30);       
+
+if(oc==0)
+{
+  oc=10;
+Serial.print("Temp=");
+      Serial.write(((int)celsius/100)+0x30);      
+      delay(20);  
+  Serial.write((((int)celsius%100)/10)+0x30);      
+      delay(20); 
+  Serial.write(((int)celsius%10)+0x30);       
+    delay(20);  
+Serial.print(",Force=");
+      Serial.write((sensorValue1/100)+0x30);       
+      delay(20);  
+  Serial.write(((sensorValue1%100)/10)+0x30);      
+      delay(20); 
+  Serial.write((sensorValue1%10)+0x30);  
+Serial.print(",Pressure=");
+      Serial.write((sensorValue2/100)+0x30);       
+      delay(20);  
+  Serial.write(((sensorValue2%100)/10)+0x30);      
+      delay(20); 
+  Serial.write((sensorValue2%10)+0x30);  
+Serial.print(",Humidity=");
+      Serial.write((sensorValue3/100)+0x30);       
+      delay(20);  
+  Serial.write(((sensorValue3%100)/10)+0x30);      
+      delay(20); 
+  Serial.write((sensorValue3%10)+0x30);  
+    Serial.print(",Mems=");
+      Serial.write((sensorValue4/100)+0x30);       
+      delay(20);  
+  Serial.write(((sensorValue4%100)/10)+0x30);      
+      delay(20); 
+  Serial.write((sensorValue4%10)+0x30);  
+            delay(20); 
+   Serial.println("");
+
+}
+oc--;
+    
+}
+
+void increment()
+{
+  count++;
+}
+
+void increment2()
+{
+  countc++;
+}
+
+void counter()
+{ 
+  if(count>2)
+  {
+  count1=count*2;
+  }
+  else
+  {
+   count1=0; 
+  }
+  time1=0;
+  time2=0;
+  count=0;
+  
+
+  delay(200);
+  
+  
+  
+} 
